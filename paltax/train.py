@@ -13,6 +13,8 @@
 # limitations under the License.
 """Training script for dark matter substructure inference."""
 
+from paltax.KCWsigma_sub_loss import sigma_sub_loss # KCW 
+
 import copy
 import functools
 from importlib import import_module
@@ -175,10 +177,12 @@ def compute_metrics(
         Value of each of the metrics.
     """
     loss = gaussian_loss(outputs, truth)
+    sigma_sub = sigma_sub_loss(outputs, truth)     # KCW
     mean, _ = jnp.split(outputs, 2, axis=-1)
     rmse = jnp.sqrt(jnp.mean(jnp.square(mean - truth)))
     metrics = {
         'loss': loss,
+        'sigma_sub_loss': sigma_sub,   # KCW
         'rmse': rmse,
     }
     metrics = lax.pmean(metrics, axis_name='batch')
