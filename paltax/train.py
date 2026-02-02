@@ -13,7 +13,6 @@
 # limitations under the License.
 """Training script for dark matter substructure inference."""
 
-from paltax.KCWsigma_sub_loss import sigma_sub_loss # KCW 
 
 import copy
 import functools
@@ -77,6 +76,32 @@ def gaussian_loss(outputs: jnp.ndarray, truth: jnp.ndarray) -> jnp.ndarray:
     loss = 0.5 * jnp.sum(
         jnp.multiply(jnp.square(mean - truth), jnp.exp(-log_var)), axis = -1)
     loss += 0.5*jnp.sum(log_var, axis = -1)
+    return jnp.mean(loss)
+
+def sigma_sub_loss(outputs: jnp.ndarray, truth: jnp.ndarray, sigma_sub_idx: int = 10) -> jnp.ndarray:
+    """Part of the Gaussian loss corresponding to the sigma_sub parameter,
+       calculated on the outputs and truth values
+
+    Args:
+        outputs: Values outputted by the model.
+        truth: True value of the parameters.
+
+    Returns:
+        Part of the Gaussian loss corresponding to the sigma_sub parameter.
+
+    Notes:
+        Loss does not inlcude constant factor of 1 / (2 * pi) ^ (d/2)
+    """
+
+    mean, log_var = jnp.split(outputs, 2, axis=-1)
+
+    mean = mean[..., sigma_sub_idx]
+    log_var = log_var[..., sigma_sub_idx]
+    truth = truth[..., sigma_sub_idx]
+
+    loss = 0.5 * jnp.sum(
+        jnp.multiply(jnp.square(mean - truth), jnp.exp(-log_var)), axis = -1)
+    loss += 0.5 * jnp.sum(log_var, axis = -1)
     return jnp.mean(loss)
 
 
@@ -177,12 +202,12 @@ def compute_metrics(
         Value of each of the metrics.
     """
     loss = gaussian_loss(outputs, truth)
-    sigma_sub = sigma_sub_loss(outputs, truth)     # KCW
+    loss_sigma_sub = sigma_sub_loss(outputs, truth)
     mean, _ = jnp.split(outputs, 2, axis=-1)
     rmse = jnp.sqrt(jnp.mean(jnp.square(mean - truth)))
     metrics = {
         'loss': loss,
-        'sigma_sub_loss': sigma_sub,   # KCW
+        'loss_sigma_sub': loss_sigma_sub,
         'rmse': rmse,
     }
     metrics = lax.pmean(metrics, axis_name='batch')

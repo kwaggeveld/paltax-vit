@@ -200,3 +200,137 @@ ResNetD50 = partial(ResNetD, stage_sizes=[3, 4, 6, 3],
 
 ResNet18Local = partial(ResNet, stage_sizes=[2, 2, 2, 2],
                         block_cls=ResNetBlock, conv=nn.ConvLocal)
+
+
+# ===========================================================================
+# =                                                                         =
+# = Models added to Paltax by Koen Waggeveld                                =
+# = Source: https://github.com/google-research/vision_transformer/tree/main =
+# =                                                                         =
+# ===========================================================================
+
+
+from paltax.vit_jax.models_vit import VisionTransformer
+import ml_collections
+
+# vit_jax/configs/models.py: get_ti16_config()
+transformer_ti = ml_collections.ConfigDict()
+transformer_ti.mlp_dim = 768
+transformer_ti.num_heads = 3
+transformer_ti.num_layers = 12
+transformer_ti.attention_dropout_rate = 0.0
+transformer_ti.dropout_rate = 0.0
+
+# vit_jax/configs/models.py: get_s16_config()
+transformer_s = ml_collections.ConfigDict()
+transformer_s.mlp_dim = 1536
+transformer_s.num_heads = 6
+transformer_s.num_layers = 12
+transformer_s.attention_dropout_rate = 0.0
+transformer_s.dropout_rate = 0.0
+
+# vit_jax/configs/models.py: get_b16_config()
+transformer_b = ml_collections.ConfigDict()
+transformer_b.mlp_dim = 3072
+transformer_b.num_heads = 12
+transformer_b.num_layers = 12
+transformer_b.attention_dropout_rate = 0.0
+transformer_b.dropout_rate = 0.0
+
+# vit_jax/configs/models.py: get_b16_config()
+transformer_l = ml_collections.ConfigDict()
+transformer_l.mlp_dim = 4096
+transformer_l.num_heads = 16
+transformer_l.num_layers = 24
+transformer_l.attention_dropout_rate = 0.0
+transformer_l.dropout_rate = 0.1
+
+
+# ==========
+# = ViT_Ti =
+# ==========
+
+ViT_Ti = partial(VisionTransformer,
+            num_classes = 0,                    # Skips final if-statement
+            transformer = transformer_ti,
+            hidden_size = 192,
+            classifier = 'token'
+         )
+
+ViT_Ti8  = partial(ViT_Ti, 
+                   model_name = 'ViT-Ti_8',  
+                   patches = ml_collections.ConfigDict({'size': (8, 8)}),
+           )
+ViT_Ti16 = partial(ViT_Ti, 
+                   model_name = 'ViT-Ti_16', 
+                   patches = ml_collections.ConfigDict({'size': (16, 16)}),
+           )
+ViT_Ti32 = partial(ViT_Ti, 
+                   model_name = 'ViT-Ti_32', 
+                   patches = ml_collections.ConfigDict({'size': (32, 32)}),
+           )
+
+
+
+# =============================================================
+# = ViT_S: has similar number of parameters to ResNet50 above =
+# =============================================================
+
+ViT_S = partial(VisionTransformer,
+            num_classes = 0,                    # Skips final if-statement
+            transformer = transformer_s,
+            hidden_size = 384,
+            classifier = 'token'
+        )   
+
+ViT_S8  = partial(ViT_S, 
+                  model_name = 'ViT-S_8',  
+                  patches = ml_collections.ConfigDict({'size': (8, 8)}),
+          )
+ViT_S16  = partial(ViT_S, 
+                  model_name = 'ViT-S_16',  
+                  patches = ml_collections.ConfigDict({'size': (16, 16)}),
+          )
+ViT_S32  = partial(ViT_S, 
+                  model_name = 'ViT-S_32',  
+                  patches = ml_collections.ConfigDict({'size': (32, 32)}),
+          )
+
+
+# =========
+# = ViT_L =
+# =========
+
+ViT_L16 = partial(VisionTransformer,            # Larger transformer (?)
+            model_name = 'ViT-L_16',
+            num_classes = 0,                    # Skips final if-statement
+            patches = ml_collections.ConfigDict({'size': (16, 16)}),
+            transformer = transformer_l,
+            hidden_size = 1024,
+            classifier = 'token'
+            )
+
+
+# ===========
+# = Hybrids =
+# ===========
+
+# vit_jax/configs/models.py: get_r26_s32_config()
+r26 = ml_collections.ConfigDict()
+r26.num_layers = (2, 2, 2, 2)         # Using four bottleneck blocks results in a downscaling of 2^(1 + 4)=32 which
+r26.width_factor = 1                  # results in an effective patch size of /32.
+
+r50 = ml_collections.ConfigDict()     # Note that the "real" Resnet50 has (3, 4, 6, 3) bottleneck blocks. Here
+r50.num_layers = (3, 4, 9)            # we're using (3, 4, 9) configuration so we get a downscaling of 2^(1 + 3)=16
+r50.width_factor = 1                  # which results in an effective patch size of /16.
+
+
+R26_S32 = partial(VisionTransformer,
+            model_name = 'R26+ViT-S_32',
+            num_classes = 0,                    # Skips final if-statement
+            patches = ml_collections.ConfigDict({'size': (1, 1)}),
+            transformer = transformer_s,
+            hidden_size = 384,
+            classifier = 'token',
+            resnet = r26
+            )
