@@ -5,8 +5,8 @@ from pathlib import Path
 def get_config():
     config = input_config()
 
-    cosmos_path = str(Path(__file__).parent.parent)
-    cosmos_path += '/paltax/test_files/cosmos_catalog_test.h5'
+    cosmos_path = str(Path(__file__).parent.parent.parent.parent)
+    cosmos_path += '/datasets/cosmos/COSMOS_train.h5'
 
     config['all_models']['all_source_models']= (source_models.CosmosCatalog(cosmos_path),)
 

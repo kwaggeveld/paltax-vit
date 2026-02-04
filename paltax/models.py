@@ -246,9 +246,9 @@ transformer_l.attention_dropout_rate = 0.0
 transformer_l.dropout_rate = 0.1
 
 
-# ==========
-# = ViT_Ti =
-# ==========
+# ===================================
+# = ViT_Ti, approx. 5.5M parameters =
+# ===================================
 
 ViT_Ti = partial(VisionTransformer,
             num_classes = 0,                    # Skips final if-statement
@@ -272,9 +272,9 @@ ViT_Ti32 = partial(ViT_Ti,
 
 
 
-# =============================================================
-# = ViT_S: has similar number of parameters to ResNet50 above =
-# =============================================================
+# ==============================================================
+# = ViT_S: approx. 21.5M parameters, similar to ResNet50 above =
+# ==============================================================
 
 ViT_S = partial(VisionTransformer,
             num_classes = 0,                    # Skips final if-statement

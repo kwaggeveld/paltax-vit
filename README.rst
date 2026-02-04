@@ -1,3 +1,68 @@
+Fork notice
+===========
+
+This repository is a fork of ``paltax-vit``.
+The original ``paltax`` implementation is preserved.
+The additions documented below were introduced for an associated report and
+do not alter the original scope of the package beyond what is explicitly
+listed.
+
+Additions in this fork
+----------------------
+
+The following functionality was added on top of the original ``paltax``
+implementation.
+
+Loss function extension
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- A ``sigma_sub_loss`` function was added to ``paltax/train.py``.
+  This function computes a Gaussian loss on the ``sigma_sub`` parameter.
+- The ``compute_metrics()`` function was extended to report the
+  corresponding ``sigma_sub_loss`` during training and evaluation.
+
+Vision Transformer models
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Several Vision Transformer (ViT) architectures were added to
+  ``paltax/models.py``.
+- These implementations are derived from the official
+  Google Research Vision Transformer repository:
+  https://github.com/google-research/vision_transformer
+- For convenience, the relevant source files from that repository were copied
+  into ``paltax/vit_jax/``:
+  
+  - ``models_resnet.py``
+  - ``models_vit.py``
+
+Model evaluation
+^^^^^^^^^^^^^^^^
+
+- An evaluation script was added at ``model_evaluation/validation.py``.
+- The script takes a configuration file and working directory, which
+  should be identical to those passed to `main.py` for training,
+  and evaluates all checkpoints stored in `workdir`.
+- Validation is performed on 1024 images stored in
+  ``model_evaluation/validation_images/``.
+- The script outputs a NumPy archive named ``val-[workdir name].npz``
+  containing training and validation information,
+  see ``validation.py`` for details.
+
+COSMOS dataset processing
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- A program was added at ``datasets/cosmos/cosmos_catalogue_cuts.py`` to process the COSMOS real galaxy dataset and generate
+  datasets used as light sources in ``paltax``.
+- The following datasets are produced:
+
+  - ``COSMOS_train.h5``: training dataset, containing 2,163 images
+  - ``COSMOS_test.h5``: validation dataset, containing 99 images
+
+- The aforementioned validation images used by ``validation.py`` were simulated using ``COSMOS_test.h5`` as light sources.
+
+----
+
+
 ==========================================================================
 |logo| paltax
 ==========================================================================
