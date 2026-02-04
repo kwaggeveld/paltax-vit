@@ -1,4 +1,4 @@
-from input_config_br_modified import get_config as input_config()
+from input_config_br_modified import get_config as input_config
 from paltax import source_models
 from pathlib import Path
 
