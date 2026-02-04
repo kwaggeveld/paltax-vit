@@ -1,7 +1,7 @@
 Fork notice
 ===========
 
-This repository is a fork of ``paltax-vit``.
+This repository is a fork of ``paltax``.
 The original ``paltax`` implementation is preserved.
 The additions documented below were introduced for an associated report and
 do not alter the original scope of the package beyond what is explicitly
