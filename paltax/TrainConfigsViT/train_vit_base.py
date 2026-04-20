@@ -32,4 +32,9 @@ def get_config():
 
     config.model = placeholder(str)     # model name should be set through the `--config.model=model_name` flag
 
+    config.model_kwargs = {
+        "dropout_rate": 5,
+        "num_layers": 12
+    }
+
     return config

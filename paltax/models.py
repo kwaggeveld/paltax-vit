@@ -276,24 +276,29 @@ ViT_Ti32 = partial(ViT_Ti,
 # = ViT_S: approx. 21.5M parameters, similar to ResNet50 above =
 # ==============================================================
 
-ViT_S = partial(VisionTransformer,
-            num_classes = 0,                    # Skips final if-statement
-            transformer = transformer_s,
-            hidden_size = 384,
-            classifier = 'token'
-        )   
+
+def ViT_S(patch_size, dropout_rate = 0.0, num_layers = 12):
+    transformer = transformer_s
+    transformer.num_layers = num_layers
+    transformer.dropout_rate = dropout_rate
+
+    return partial(VisionTransformer,
+        model_name  = "ViT-S_" + str(patch_size),
+        patches     = ml_collections.ConfigDict({'size': (patch_size, patch_size)}),
+        transformer = transformer,
+        num_classes = 0,
+        hidden_size = 384,
+        classifier  = "token"
+    )
 
 ViT_S8  = partial(ViT_S, 
-                  model_name = 'ViT-S_8',  
-                  patches = ml_collections.ConfigDict({'size': (8, 8)}),
+                patch_size = 8
           )
 ViT_S16  = partial(ViT_S, 
-                  model_name = 'ViT-S_16',  
-                  patches = ml_collections.ConfigDict({'size': (16, 16)}),
+                patch_size = 16
           )
 ViT_S32  = partial(ViT_S, 
-                  model_name = 'ViT-S_32',  
-                  patches = ml_collections.ConfigDict({'size': (32, 32)}),
+                patch_size = 32
           )
 
 

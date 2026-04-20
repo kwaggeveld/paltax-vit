@@ -1,5 +1,8 @@
 .DS_Store
 
+# Big dataset
+COSMOS_train.h5
+
 # Jupyter
 .ipynb_checkpoints
 
