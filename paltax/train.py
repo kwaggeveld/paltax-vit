@@ -464,8 +464,6 @@ def train_and_evaluate(
     num_steps = config.num_train_steps
 
     model_kwargs = config.get('model_kwargs', {})                       # get kwargs if provided, otherwise empty dict
-    print("received kwargs:::")
-    print(model_kwargs)
     model_cls = getattr(models, config.model)(**model_kwargs)           # use factory function with kwargs (dropout etc)
     num_outputs = len(input_config['truth_parameters'][0]) * 2
     model = model_cls(num_outputs=num_outputs, dtype=jnp.float32)
