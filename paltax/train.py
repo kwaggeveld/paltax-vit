@@ -54,7 +54,7 @@ def initialized(
     input_shape = (1, image_size, image_size, 1)
     @jax.jit
     def init(*args):
-        return model.init(*args)
+        return model.init(*args, train = False)
     variables = init({'params': rng}, jnp.ones(input_shape, model.dtype))
     return variables['params'], variables['batch_stats']
 
@@ -262,6 +262,7 @@ def get_learning_rate_schedule(
 class TrainState(train_state.TrainState):
     """Training state class for models."""
     batch_stats: Any
+    key: jax.Array
 
 
 def get_outputs(
@@ -284,7 +285,8 @@ def get_outputs(
 
 def train_step(
     state: TrainState, batch: Mapping[str, jnp.ndarray],
-    learning_rate_schedule: Callable[[Union[int, jnp.ndarray]], float]
+    learning_rate_schedule: Callable[[Union[int, jnp.ndarray]], float],
+    # rng: Sequence[int]
 ) -> Tuple[TrainState, Mapping[str, Any]]:
     """Perform a single training step.
 
@@ -296,19 +298,22 @@ def train_step(
     Returns:
         Updated TrainState object and metrics for training step."""
 
+    step = state.step
+    rng_dropout = jax.random.fold_in(state.key, data = step)
+
     # Define loss function seperately for use with jax.value_and_grad.
     def loss_fn(params):
         """Loss function used for training."""
         outputs, new_model_state = state.apply_fn(
             {'params': params, 'batch_stats': state.batch_stats},
             batch['image'],
+            train = True, rngs = { "dropout": rng_dropout },
             mutable=['batch_stats'])
         loss = gaussian_loss(outputs, batch['truth'])
 
         return loss, (new_model_state, outputs)
 
     # Extract learning rate for current step.
-    step = state.step
     lr = learning_rate_schedule(step)
 
     # Extract gradients for weight updates and current model state and outputs
@@ -386,6 +391,7 @@ def create_train_state(
     Returns:
         Initialized TrainState for model.
     """
+    rng, rng_dropout = jax.random.split(rng)
     params, batch_stats = initialized(rng, image_size, model)
     optimizer = config.get('optimizer', 'adam')
     if optimizer == 'adam':
@@ -402,7 +408,8 @@ def create_train_state(
         apply_fn=model.apply,
         params=params,
         tx=tx,
-        batch_stats=batch_stats)
+        batch_stats=batch_stats,
+        key = rng_dropout)
     return state
 
 
