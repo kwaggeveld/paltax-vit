@@ -26,6 +26,8 @@
                 - num_val_images:  number of validation images evaluated
                 - image_size:      input image size
                 - batch_size:      training batch size from config
+            as well as model keyword arguments from the configuration, 
+            stored as model_{key}.
 
     Notes:
         - Assumes validation images are stored in ./validation_images, 
@@ -75,6 +77,9 @@ config_flags.DEFINE_config_file(
     'File path to the training configuration.',
 )
 
+flags.DEFINE_integer('checkpoint_stride', 1, 'Evaluate every Nth checkpoint.')
+flags.DEFINE_integer('num_val_images', None, 'Number of validation images to use.')
+
 # ============================================================
 #  Functions
 # ============================================================
@@ -93,15 +98,19 @@ def load_validation_data():
     truths = []
 
     for image_batch in Path("./validation_images").iterdir():
-        batch = np.load(image_batch, allow_pickle = True)
-        images.append(batch["images"])
-        truths.append(batch["truths"])
+        with np.load(image_batch, allow_pickle=True) as batch:
+                images.append(batch["images"])
+                truths.append(batch["truths"])
 
     images = np.concatenate(images, axis = 0)   # (1024, H, W)
     truths = np.concatenate(truths, axis = 0)   # (1024, D)
 
     images = jnp.expand_dims(jnp.asarray(images), axis = -1)  # (1024, H, W, 1)
     truths = jnp.asarray(truths)
+
+    if FLAGS.num_val_images is not None:
+        images = images[:FLAGS.num_val_images]
+        truths = truths[:FLAGS.num_val_images]
 
     return images, truths
 
@@ -160,12 +169,13 @@ def main(_):
         [p for p in Path(workdir).iterdir() if p.is_dir() and p.name.startswith("checkpoint_")],
         key = lambda p: int(p.name.split("_")[1])
     )
-    
-    state = None
-    for checkpoint in tqdm(checkpoint_list):
-        state = clean_train_state()
-        state = checkpoints.restore_checkpoint(checkpoint, state)
 
+    # Apply stride flag
+    checkpoint_list = checkpoint_list[::FLAGS.checkpoint_stride]
+    
+    state = clean_train_state()
+    for checkpoint in tqdm(checkpoint_list):
+        state = checkpoints.restore_checkpoint(checkpoint, state)
 
         loss, loss_ss = evaluate_losses(
             state.params, state.batch_stats, images, truths
@@ -175,6 +185,9 @@ def main(_):
         losses_ss.append(loss_ss)
 
     steps = np.array([int(p.name.split("_")[1]) for p in checkpoint_list])
+
+    model_kwargs = CONFIG.get('model_kwargs', {}).to_dict()
+    model_kwargs = {f'model_{key}': value for key, value in model_kwargs.items()}
 
     np.savez(
         f"val-{Path(workdir).name}.npz",
@@ -195,6 +208,9 @@ def main(_):
         num_val_images = images.shape[0],
         image_size     = IMAGE_SIZE,
         batch_size     = CONFIG.batch_size,
+
+        # Dropout, number of layers
+        **model_kwargs
     )
 
 
